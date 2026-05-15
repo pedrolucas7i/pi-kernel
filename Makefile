@@ -26,9 +26,9 @@ SRC_DIR = src/kernel
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/objects
 
-# Arquivos fonte
-CSOURCES = $(wildcard $(SRC_DIR)/*.c)
-ASMSOURCES = $(wildcard $(SRC_DIR)/*.S)
+# Arquivos fonte (recursivo)
+CSOURCES = $(shell find $(SRC_DIR) -name "*.c")
+ASMSOURCES = $(shell find $(SRC_DIR) -name "*.S")
 
 # Objetos
 COBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(CSOURCES))
@@ -58,14 +58,14 @@ $(ELF): $(OBJECTS)
 $(IMG): $(ELF)
 	$(OBJCOPY) $< -O binary $@
 
-# Compilação C
+# Compilação C (funciona para subpastas)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compilação Assembly
+# Compilação Assembly (funciona para subpastas)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.S
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Executar no QEMU
