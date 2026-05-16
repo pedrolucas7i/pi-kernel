@@ -83,7 +83,7 @@ void uart_putc(char c)
 }
 
 /* =========================
-   PUT STRING (FIXED)
+   PUT STRING
    ========================= */
 void uart_puts(const char *str)
 {

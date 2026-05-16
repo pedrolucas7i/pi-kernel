@@ -149,22 +149,51 @@ void clear_screen(uint32_t color)
     }
 }
 
+/* =========================
+   RECTANGLE
+   ========================= */
+
 void draw_rect(int x,
                int y,
                int w,
                int h,
-               uint32_t color)
+               uint32_t color,
+               int filled)
 {
-    for (int yy = 0; yy < h; yy++)
+    if (filled)
     {
-        for (int xx = 0; xx < w; xx++)
+        for (int yy = 0; yy < h; yy++)
         {
-            put_pixel(x + xx,
-                      y + yy,
-                      color);
+            for (int xx = 0; xx < w; xx++)
+            {
+                put_pixel(x + xx,
+                          y + yy,
+                          color);
+            }
         }
     }
+    else
+    {
+        draw_line(x, y, x + w - 1, y, color);
+        draw_line(x, y, x, y + h - 1, color);
+
+        draw_line(x + w - 1,
+                  y,
+                  x + w - 1,
+                  y + h - 1,
+                  color);
+
+        draw_line(x,
+                  y + h - 1,
+                  x + w - 1,
+                  y + h - 1,
+                  color);
+    }
 }
+
+/* =========================
+   LINE
+   ========================= */
 
 void draw_line(int x0,
                int y0,
@@ -203,23 +232,88 @@ void draw_line(int x0,
     }
 }
 
+/* =========================
+   TRIANGLE
+   ========================= */
+
+static void swap_int(int* a, int* b)
+{
+    int t = *a;
+    *a = *b;
+    *b = t;
+}
+
 void draw_triangle(int x1,
                    int y1,
                    int x2,
                    int y2,
                    int x3,
                    int y3,
-                   uint32_t color)
+                   uint32_t color,
+                   int filled)
 {
-    draw_line(x1, y1, x2, y2, color);
-    draw_line(x2, y2, x3, y3, color);
-    draw_line(x3, y3, x1, y1, color);
+    if (!filled)
+    {
+        draw_line(x1, y1, x2, y2, color);
+        draw_line(x2, y2, x3, y3, color);
+        draw_line(x3, y3, x1, y1, color);
+
+        return;
+    }
+
+    if (y1 > y2)
+    {
+        swap_int(&y1, &y2);
+        swap_int(&x1, &x2);
+    }
+
+    if (y2 > y3)
+    {
+        swap_int(&y2, &y3);
+        swap_int(&x2, &x3);
+    }
+
+    if (y1 > y2)
+    {
+        swap_int(&y1, &y2);
+        swap_int(&x1, &x2);
+    }
+
+    for (int y = y1; y <= y3; y++)
+    {
+        int xa;
+        int xb;
+
+        if (y < y2)
+        {
+            xa = x1 + (x2 - x1) * (y - y1) / (y2 - y1 + 1);
+            xb = x1 + (x3 - x1) * (y - y1) / (y3 - y1 + 1);
+        }
+        else
+        {
+            xa = x2 + (x3 - x2) * (y - y2) / (y3 - y2 + 1);
+            xb = x1 + (x3 - x1) * (y - y1) / (y3 - y1 + 1);
+        }
+
+        if (xa > xb)
+            swap_int(&xa, &xb);
+
+        for (int x = xa; x <= xb; x++)
+        {
+            put_pixel(x, y, color);
+        }
+    }
 }
+
+/* =========================
+   CIRCLE
+   ========================= */
 
 void draw_circle(int xc,
                  int yc,
                  int radius,
-                 uint32_t color)
+                 uint32_t color,
+                 int filled)
 {
     int x = radius;
     int y = 0;
@@ -228,16 +322,33 @@ void draw_circle(int xc,
 
     while (y <= x)
     {
-        for (int xx = -x; xx <= x; xx++)
+        if (filled)
         {
-            put_pixel(xc + xx, yc + y, color);
-            put_pixel(xc + xx, yc - y, color);
-        }
+            for (int xx = -x; xx <= x; xx++)
+            {
+                put_pixel(xc + xx, yc + y, color);
+                put_pixel(xc + xx, yc - y, color);
+            }
 
-        for (int xx = -y; xx <= y; xx++)
+            for (int xx = -y; xx <= y; xx++)
+            {
+                put_pixel(xc + xx, yc + x, color);
+                put_pixel(xc + xx, yc - x, color);
+            }
+        }
+        else
         {
-            put_pixel(xc + xx, yc + x, color);
-            put_pixel(xc + xx, yc - x, color);
+            put_pixel(xc + x, yc + y, color);
+            put_pixel(xc - x, yc + y, color);
+
+            put_pixel(xc + x, yc - y, color);
+            put_pixel(xc - x, yc - y, color);
+
+            put_pixel(xc + y, yc + x, color);
+            put_pixel(xc - y, yc + x, color);
+
+            put_pixel(xc + y, yc - x, color);
+            put_pixel(xc - y, yc - x, color);
         }
 
         y++;

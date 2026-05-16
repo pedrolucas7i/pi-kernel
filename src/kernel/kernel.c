@@ -26,7 +26,7 @@ void kernel_main(void)
 
     uart_puts((char*)"GPU");
 
-    draw_rect(50, 50, 200, 120, 0x00FF0000);
+    draw_rect(50, 50, 200, 120, 0x00FF0000, 1);
 
     while (1)
     {
