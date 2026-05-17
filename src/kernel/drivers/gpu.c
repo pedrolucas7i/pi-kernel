@@ -118,7 +118,7 @@ int framebuffer_init(uint32_t width,
     return 1;
 }
 
-static inline void put_pixel(int x,
+void put_pixel(int x,
                              int y,
                              uint32_t color)
 {
@@ -136,6 +136,18 @@ static inline void put_pixel(int x,
         (x * (screen_depth >> 3));
 
     *((volatile uint32_t*)(framebuffer + offset)) = color;
+}
+
+void put_pixel_alpha(int x, int y, uint32_t color, uint8_t alpha)
+{
+    if (x < 0 || y < 0 || x >= (int)screen_width || y >= (int)screen_height)
+        return;
+
+    uint32_t offset = (y * screen_pitch) + (x * (screen_depth >> 3));
+
+    uint32_t* px = (uint32_t*)(framebuffer + offset);
+
+    *px = blend(color, *px, alpha);
 }
 
 void clear_screen(uint32_t color)
@@ -361,6 +373,119 @@ void draw_circle(int xc,
         {
             x--;
             decision += (2 * (y - x)) + 1;
+        }
+    }
+}
+
+uint32_t blend(uint32_t src, uint32_t dst, uint8_t alpha)
+{
+    uint8_t sr = (src >> 16) & 0xFF;
+    uint8_t sg = (src >> 8) & 0xFF;
+    uint8_t sb = src & 0xFF;
+
+    uint8_t dr = (dst >> 16) & 0xFF;
+    uint8_t dg = (dst >> 8) & 0xFF;
+    uint8_t db = dst & 0xFF;
+
+    uint8_t r = (sr * alpha + dr * (255 - alpha)) / 255;
+    uint8_t g = (sg * alpha + dg * (255 - alpha)) / 255;
+    uint8_t b = (sb * alpha + db * (255 - alpha)) / 255;
+
+    return (r << 16) | (g << 8) | b;
+}
+
+void fill_gradient(uint32_t c1, uint32_t c2, int vertical)
+{
+    for (int y = 0; y < (int)screen_height; y++)
+    {
+        for (int x = 0; x < (int)screen_width; x++)
+        {
+            uint8_t t;
+
+            if (vertical)
+                t = (y * 255) / screen_height;
+            else
+                t = (x * 255) / screen_width;
+
+            uint8_t r1 = (c1 >> 16) & 0xFF;
+            uint8_t g1 = (c1 >> 8) & 0xFF;
+            uint8_t b1 = c1 & 0xFF;
+
+            uint8_t r2 = (c2 >> 16) & 0xFF;
+            uint8_t g2 = (c2 >> 8) & 0xFF;
+            uint8_t b2 = c2 & 0xFF;
+
+            uint8_t r = r1 + ((r2 - r1) * t) / 255;
+            uint8_t g = g1 + ((g2 - g1) * t) / 255;
+            uint8_t b = b1 + ((b2 - b1) * t) / 255;
+
+            put_pixel(x, y, (r << 16) | (g << 8) | b);
+        }
+    }
+}
+
+void draw_circle_gradient(int xc, int yc, int radius, uint32_t c1, uint32_t c2)
+{
+    for (int y = -radius; y <= radius; y++)
+    {
+        for (int x = -radius; x <= radius; x++)
+        {
+            if (x * x + y * y <= radius * radius)
+            {
+                int d = (x * x + y * y);
+                int max = radius * radius;
+
+                uint8_t t = (d * 255) / max;
+
+                uint8_t r = ((c1 >> 16) & 0xFF) + (((c2 >> 16) & 0xFF - (c1 >> 16) & 0xFF) * t) / 255;
+                uint8_t g = ((c1 >> 8) & 0xFF) + (((c2 >> 8) & 0xFF - (c1 >> 8) & 0xFF) * t) / 255;
+                uint8_t b = (c1 & 0xFF) + ((c2 & 0xFF - c1 & 0xFF) * t) / 255;
+
+                put_pixel(xc + x, yc + y, (r << 16) | (g << 8) | b);
+            }
+        }
+    }
+}
+
+static uint32_t seed2 = 987654;
+
+static inline uint32_t fast_rand()
+{
+    seed2 = seed2 * 1103515245 + 12345;
+    return seed2;
+}
+
+void draw_noise(int density)
+{
+    for (int i = 0; i < density; i++)
+    {
+        int x = fast_rand() % screen_width;
+        int y = fast_rand() % screen_height;
+
+        uint32_t v = fast_rand() & 0xFF;
+
+        uint32_t color = (v << 16) | (v << 8) | v;
+
+        put_pixel(x, y, color);
+    }
+}
+
+void draw_wave_background(int t)
+{
+    for (int y = 0; y < (int)screen_height; y++)
+    {
+        for (int x = 0; x < (int)screen_width; x++)
+        {
+            uint8_t wave = (uint8_t)(
+                (x + t + (y >> 1)) ^ (y + (t >> 1))
+            );
+
+            uint32_t color =
+                (wave << 16) |
+                ((wave / 2) << 8) |
+                (255 - wave);
+
+            put_pixel(x, y, color);
         }
     }
 }

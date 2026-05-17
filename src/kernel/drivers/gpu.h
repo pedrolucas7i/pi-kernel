@@ -1,7 +1,5 @@
-// src/kernel/gpu.h
-
-#ifndef GRAPHICS_H
-#define GRAPHICS_H
+#ifndef GPU_H
+#define GPU_H
 
 #include <stdint.h>
 
@@ -11,12 +9,15 @@ int framebuffer_init(uint32_t width,
 
 void clear_screen(uint32_t color);
 
+void put_pixel(int x, int y, uint32_t color);
+void put_pixel_alpha(int x, int y, uint32_t color, uint8_t alpha);
+
 void draw_rect(int x,
                int y,
                int w,
                int h,
                uint32_t color,
-               int);
+               int filled);
 
 void draw_line(int x0,
                int y0,
@@ -38,5 +39,23 @@ void draw_circle(int xc,
                  int radius,
                  uint32_t color,
                  int filled);
+
+void draw_noise(int density);
+
+void draw_wave_background(int t);
+
+void fill_gradient(uint32_t c1,
+                   uint32_t c2,
+                   int vertical);
+
+void draw_circle_gradient(int xc,
+                          int yc,
+                          int radius,
+                          uint32_t c1,
+                          uint32_t c2);
+
+uint32_t blend(uint32_t src,
+               uint32_t dst,
+               uint8_t alpha);
 
 #endif
