@@ -1,8 +1,7 @@
 // src/kernel/gpu.c
 
 #include "gpu.h"
-
-#define MMIO_BASE       0x20000000UL
+#include "mmio.h"
 
 #define MAILBOX_BASE    (MMIO_BASE + 0xB880)
 
@@ -26,24 +25,23 @@ static uint32_t screen_depth  = 0;
 
 static int mailbox_call(uint8_t channel)
 {
-    uint32_t addr =
-    (((uint32_t)&mbox & ~0xF) |
-     (channel & 0xF));
+    uint32_t addr = ((uint32_t)&mbox & ~0xF) | (channel & 0xF);
 
-    while (*MAILBOX_STATUS & MAILBOX_FULL);
+    for (volatile int i = 0; i < 100000; i++)
+        if (!(*MAILBOX_STATUS & MAILBOX_FULL))
+            break;
 
     *MAILBOX_WRITE = addr;
 
-    while (1)
+    for (volatile int i = 0; i < 1000000; i++)
     {
-        while (*MAILBOX_STATUS & MAILBOX_EMPTY);
+        if (*MAILBOX_STATUS & MAILBOX_EMPTY)
+            continue;
 
         uint32_t response = *MAILBOX_READ;
 
         if (response == addr)
-        {
             return mbox[1] == 0x80000000;
-        }
     }
 
     return 0;
@@ -118,23 +116,15 @@ int framebuffer_init(uint32_t width,
     return 1;
 }
 
-void put_pixel(int x,
-                             int y,
-                             uint32_t color)
+/* =========================
+   PIXEL
+   ========================= */
+void put_pixel(int x, int y, uint32_t color)
 {
-    if (x < 0 || y < 0)
+    if (x < 0 || y < 0 || x >= (int)screen_width || y >= (int)screen_height)
         return;
 
-    if (x >= (int)screen_width)
-        return;
-
-    if (y >= (int)screen_height)
-        return;
-
-    uint32_t offset =
-        (y * screen_pitch) +
-        (x * (screen_depth >> 3));
-
+    uint32_t offset = (y * screen_pitch) + (x * (screen_depth >> 3));
     *((volatile uint32_t*)(framebuffer + offset)) = color;
 }
 
@@ -424,22 +414,29 @@ void fill_gradient(uint32_t c1, uint32_t c2, int vertical)
     }
 }
 
-void draw_circle_gradient(int xc, int yc, int radius, uint32_t c1, uint32_t c2)
+void draw_circle_gradient(int xc, int yc, int radius,
+                          uint32_t c1, uint32_t c2)
 {
     for (int y = -radius; y <= radius; y++)
     {
         for (int x = -radius; x <= radius; x++)
         {
-            if (x * x + y * y <= radius * radius)
+            int d = x*x + y*y;
+            if (d <= radius*radius)
             {
-                int d = (x * x + y * y);
-                int max = radius * radius;
+                uint8_t t = (d * 255) / (radius * radius);
 
-                uint8_t t = (d * 255) / max;
+                uint8_t r1 = (c1 >> 16) & 0xFF;
+                uint8_t g1 = (c1 >> 8) & 0xFF;
+                uint8_t b1 = c1 & 0xFF;
 
-                uint8_t r = ((c1 >> 16) & 0xFF) + (((c2 >> 16) & 0xFF - (c1 >> 16) & 0xFF) * t) / 255;
-                uint8_t g = ((c1 >> 8) & 0xFF) + (((c2 >> 8) & 0xFF - (c1 >> 8) & 0xFF) * t) / 255;
-                uint8_t b = (c1 & 0xFF) + ((c2 & 0xFF - c1 & 0xFF) * t) / 255;
+                uint8_t r2 = (c2 >> 16) & 0xFF;
+                uint8_t g2 = (c2 >> 8) & 0xFF;
+                uint8_t b2 = c2 & 0xFF;
+
+                uint8_t r = r1 + ((r2 - r1) * t) / 255;
+                uint8_t g = g1 + ((g2 - g1) * t) / 255;
+                uint8_t b = b1 + ((b2 - b1) * t) / 255;
 
                 put_pixel(xc + x, yc + y, (r << 16) | (g << 8) | b);
             }
