@@ -1,6 +1,0 @@
-https://github.com/Naevier/VideoCore-FrameBuffer
-https://developer.arm.com/documentation/ddi0301/latest/
-https://docs.broadcom.com/doc/12358545
-https://jsandler18.github.io/extra/mailbox.html
-https://www.raspberrypi.org/app/uploads/2012/02/BCM2835-ARM-Peripherals.pdf
-https://github.com/jsandler18/raspi-kernel
