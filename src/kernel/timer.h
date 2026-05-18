@@ -10,6 +10,7 @@ void timer_init(void);
 uint32_t get_ticks(void);
 
 /* Delay */
+void delay(uint32_t count);
 void delay_us(uint32_t us);
 void delay_ms(uint32_t ms);
 

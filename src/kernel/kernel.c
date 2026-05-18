@@ -9,7 +9,11 @@ void kernel_main(void)
 {
     uart_init();
 
-    framebuffer_init(1920, 1080, 32);
+    while(!framebuffer_init(1920, 1080, 32));
+    
+    char msg[] = {'F','B','\n','\0'};
+    uart_puts(msg);
+
     clear_screen(0x000000);
     gpio_set_function(LED_PIN, GPIO_OUTPUT);
 

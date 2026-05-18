@@ -1,4 +1,5 @@
 #include "uart.h"
+#include "../timer.h"
 #include <stdint.h>
 
 /*
@@ -21,13 +22,6 @@
 
 #define FR_TXFF (1 << 5)
 #define FR_RXFE (1 << 4)
-
-/* Simple delay */
-static inline void delay(int32_t count)
-{
-    while (count--)
-        asm volatile("nop");
-}
 
 /* =========================
    GPIO SETUP FOR UART
@@ -80,17 +74,6 @@ void uart_putc(char c)
     while (UART_FR & FR_TXFF);
 
     UART_DR = (uint32_t)c;
-}
-
-/* =========================
-   PUT STRING
-   ========================= */
-void uart_puts(const char *str)
-{
-    while (*str)
-    {
-        uart_putc(*str++);
-    }
 }
 
 /* =========================
