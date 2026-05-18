@@ -8,6 +8,7 @@ void timer_init(void);
 
 /* Returns ticks (microsseconds from boot) */
 uint32_t get_ticks(void);
+uint32_t get_ticks_ms(void);
 
 /* Delay */
 void delay(uint32_t count);

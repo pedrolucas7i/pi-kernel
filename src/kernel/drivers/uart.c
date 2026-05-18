@@ -69,7 +69,6 @@ void uart_putc(char c)
     while (UART_FR & FR_TXFF);
 
     if (c == '\n')
-        UART_DR = '\r';
 
     while (UART_FR & FR_TXFF);
 
