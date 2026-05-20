@@ -1,8 +1,10 @@
 #include "heap.h"
+#include <stddef.h>
+#include <stdint.h>
 
-static uint8_t* heap_start = 0;
-static uint8_t* heap_end   = 0;
-static uint8_t* heap_curr  = 0;
+static uint8_t *heap_start = 0;
+static uint8_t *heap_end = 0;
+static uint8_t *heap_curr = 0;
 
 static inline size_t align_forward(size_t ptr, size_t align)
 {
@@ -17,29 +19,34 @@ static inline size_t align_forward(size_t ptr, size_t align)
     return p;
 }
 
-void heap_init(uint8_t* start, size_t size)
+void heap_init(uint8_t *start, size_t size)
 {
     heap_start = start;
-    heap_end   = start + size;
-    heap_curr  = start;
+    heap_end = start + size;
+    heap_curr = start;
+}
+
+void heap_reset()
+{
+    heap_curr = heap_start;
 }
 
 /* malloc simples */
-void* kmalloc(size_t size)
+void *kmalloc(size_t size)
 {
     return kmalloc_aligned(size, 8);
 }
 
 /* malloc com alinhamento */
-void* kmalloc_aligned(size_t size, size_t align)
+void *kmalloc_aligned(size_t size, size_t align)
 {
     if (heap_curr == 0)
         return 0;
 
     size_t curr_addr = (size_t)heap_curr;
-    size_t aligned   = align_forward(curr_addr, align);
+    size_t aligned = align_forward(curr_addr, align);
 
-    uint8_t* ptr = (uint8_t*)aligned;
+    uint8_t *ptr = (uint8_t *)aligned;
 
     if (ptr + size > heap_end)
         return 0; // sem memória
